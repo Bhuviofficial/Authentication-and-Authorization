@@ -40,25 +40,32 @@ export const loginUser = async (req, res, next) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return next({ status: 404, message: "User not found" });
+    if (!user) {
+      return next({ status: 400, message: "User not found" });
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return next({ status: 400, message: "Invalid credentials" });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return next({ status: 400, message: "Invalid password" });
+    }
 
-  
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    return res.json({
-      success: true,
-      message: "Login successful",
-      token: token,
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
     });
 
+    res.json({
+      success: true,
+      message: "User logged in successfully",
+      token,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+export const getProfile = (req, res) => 
+    res.json({
+        success: true,
+        user: req.user    
+    })
+    
